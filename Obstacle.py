@@ -111,7 +111,7 @@ class Obstacle():
 
         victim_count = 0
         last_run_time = 0
-        delay = 5
+        delay = 3
 
         while not rospy.is_shutdown():
             all_dist = self.get_scan()
