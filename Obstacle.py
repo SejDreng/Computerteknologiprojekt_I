@@ -23,44 +23,41 @@ import math
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 import time
-#import smbus
+import smbus
 # Get I2C bus
-##bus = smbus.SMBus(1)
+bus = smbus.SMBus(1)
 
 # ISL29125 address, 0x44(68)
 # Select configuation-1register, 0x01(01)
 # 0x0D(13) Operation: RGB, Range: 360 lux, Res: 16 Bits
-##bus.write_byte_data(0x44, 0x01, 0x05)
+bus.write_byte_data(0x44, 0x01, 0x05)
+time.sleep(1)
 
-##time.sleep(1)
+def getAndUpdateColour():
+    #while True:
+        # Read the data from the sensor
+        # Convert the data to green, red and blue int values
+        # Insert code here
+        data = bus.read_i2c_block_data(0x44, 0x09, 6)
+        green = data[1] + data[0]/256
+        red = data[3] + data[2]/256
+        blue = data[5] + data[4]/256
 
-#print("Reading colour values and displaying them in a new window\n")
-
-#def getAndUpdateColour():
-#    while True:
-#        # Read the data from the sensor
-#       # Convert the data to green, red and blue int values
-#        # Insert code here
-#        data = bus.read_i2c_block_data(0x44, 0x09, 6)
-#        green = data[1] + data[0]/256
-#        red = data[3] + data[2]/256
-#        blue = data[5] + data[4]/256
-
-#        colour = ""
-#        if green > red and green > blue:
-#            colour = "green"
-#        elif blue > red:
-#            colour = "Blue"
-#        else:
-#            colour = "Red"
+        colour = ""
+        if green > red and green > blue:
+            colour = "Green"
+        elif blue > red:
+            colour = "Blue"
+        else:
+            colour = "Red"
         # Output data to the console RGB values
         # Uncomment the line below when you have read the red, green and blue values
-#        print("RGB(%d %d %d)" % (red, green, blue))
-#        print("The colour is " + colour)
-#        time.sleep(2)
+        print("RGB(%d %d %d)" % (red, green, blue))
+        print("The colour is " + colour)
+        return colour
 
 LINEAR_VEL = 0.22
-STOP_DISTANCE = 0.20
+STOP_DISTANCE = 0.40
 LIDAR_ERROR = 0.05
 SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR + 0.1
 
@@ -105,50 +102,67 @@ class Obstacle():
             right_lidar_samples = scan.ranges[:right_lidar_samples_ranges]
             scan_filter.extend(left_lidar_samples + right_lidar_samples)
         
+
         return scan_filter
 
     def obstacle(self):
         twist = Twist()
         turtlebot_moving = True
 
+        victim_count = 0
+        last_run_time = 0
+        delay = 5
+
         while not rospy.is_shutdown():
             all_dist = self.get_scan()
-            front_min_distance = min_org(all_dist[0],STOP_DISTANCE+0.01)
-            left_min_distance = min_org(all_dist[2],STOP_DISTANCE+0.01)
-            right_min_distance = min_org(all_dist[1],STOP_DISTANCE+0.01)
+            front_min_distance, i_f = min_org(all_dist[0],SAFE_STOP_DISTANCE+0.001)
+            right_min_distance, _ = min_org(all_dist[1],SAFE_STOP_DISTANCE+0.001)
+            left_min_distance, _ = min_org(all_dist[2],SAFE_STOP_DISTANCE+0.001)
 
-            if 0 < front_min_distance < SAFE_STOP_DISTANCE:
-                # Center is closest
-                if front_min_distance < left_min_distance and front_min_distance < right_min_distance and (0 < front_min_distance < STOP_DISTANCE):
-                    twist.linear.x = 0.05
-                    twist.angular.z = 2
+            if (0.000 < right_min_distance < 0.130) or (0.000 < left_min_distance < 0.130) or (0.000 < front_min_distance < 0.130):
+
+                if left_min_distance <= right_min_distance:
+                    twist.angular.z = -1.5
+                    twist.linear.x = 0
                     self._cmd_pub.publish(twist)
-                    #turtlebot_moving = False
-                    rospy.loginfo('Stop! Center distance of the obstacle, driving left : %f', front_min_distance)
-            
+                    rospy.loginfo('You spin me right round baby right round')
+                else:
+                    twist.angular.z = 1.5
+                    twist.linear.x = 0
+                    self._cmd_pub.publish(twist)
+                    rospy.loginfo('You spin me left round baby left round')
+
+            elif 0.00 < front_min_distance < STOP_DISTANCE:
+                # Center is closest
+                if front_min_distance < left_min_distance and front_min_distance < right_min_distance and (0.00 < front_min_distance < STOP_DISTANCE):
+                    if i_f % 2 == 0:
+                        twist.linear.x = LINEAR_VEL
+                        twist.angular.z = -2
+                        self._cmd_pub.publish(twist)
+                        #turtlebot_moving = False
+                        rospy.loginfo('Stop! Center distance of the obstacle, driving right : %f', front_min_distance)
+                    else:
+                        twist.linear.x = LINEAR_VEL
+                        twist.angular.z = 2
+                        self._cmd_pub.publish(twist)
+                        #turtlebot_moving = False
+                        rospy.loginfo('Stop! Center distance of the obstacle, driving left : %f', front_min_distance)
+                    rospy.loginfo('%f',i_f)
                 # Right side is closest
-                elif right_min_distance < left_min_distance and right_min_distance < front_min_distance and (0 < right_min_distance < STOP_DISTANCE):
-                    twist.linear.x = 0.1
-                    twist.angular.z = 2
+                elif right_min_distance < left_min_distance and right_min_distance < front_min_distance and (0.00 < right_min_distance < STOP_DISTANCE):
+                    twist.linear.x = LINEAR_VEL
+                    twist.angular.z = 3 * (right_min_distance/front_min_distance) 
                     self._cmd_pub.publish(twist)
                     #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving left. ' + 'Distance of the obstacle : %f', right_min_distance)
 
                 # Left side is closest 
-                elif left_min_distance < front_min_distance and left_min_distance < right_min_distance and (0 < left_min_distance < STOP_DISTANCE):
-                    twist.linear.x = 0.1
-                    twist.angular.z = -2
+                elif left_min_distance < front_min_distance and left_min_distance < right_min_distance and (0.00 < left_min_distance < STOP_DISTANCE):
+                    twist.linear.x = LINEAR_VEL
+                    twist.angular.z = -3 * (left_min_distance/front_min_distance)
                     self._cmd_pub.publish(twist)
                     #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving right. ' + 'Distance of the obstacle : %f', left_min_distance)
-                
-                # If no distance is critical, we drive more carefull now.
-                else:
-                    twist.linear.x = LINEAR_VEL
-                    twist.angular.z = 0.0
-                    self._cmd_pub.publish(twist)
-                    turtlebot_moving = True
-                    rospy.loginfo('We crusin with, but lookin out with a distance of %f', front_min_distance)
 
             else:
                 twist.linear.x = LINEAR_VEL
@@ -156,22 +170,30 @@ class Obstacle():
                 self._cmd_pub.publish(twist)
                 turtlebot_moving = True
                 rospy.loginfo('We crusin with a distance of %f', front_min_distance)
+            
+            if time.time() > last_run_time + delay:
+                if getAndUpdateColour() == 'Red':
+                    victim_count += 1
+                    rospy.loginfo('Victims found: %f', victim_count)
+                    last_run_time = time.time()
+        rospy.loginfo('We found %f victims', victim_count)
 
 def min_org(l,a):
     min = a
+    min_i = 0
     for i in range(len(l)):
-        if l[i] != 0 and l[i] < min:
+        if l[i] != 0.0000 and l[i] < min:
             min = l[i]
-    return min
+            min_i = i
+    return min, min_i
 
 def main():
     rospy.init_node('turtlebot3_obstacle')
-    #print("Reading colour values and displaying them in a new window\n")
-    #getAndUpdateColour()
+
     try:
         obstacle = Obstacle()
     except rospy.ROSInterruptException:
         pass
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     main()
