@@ -33,7 +33,7 @@ bus = smbus.SMBus(1)
 bus.write_byte_data(0x44, 0x01, 0x05)
 time.sleep(1)
 
-def getAndUpdateColour():
+def getAndUpdateColour(): #This function reads data from the RGB sensor via the i2c protocol, and decides which color is dominant
     #while True:
         # Read the data from the sensor
         # Convert the data to green, red and blue int values
@@ -61,15 +61,15 @@ STOP_DISTANCE = 0.40
 LIDAR_ERROR = 0.05
 SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR + 0.1
 
-class Obstacle():
+class Obstacle(): #We define the obstacle class, encapsulating all its behavior and methods related to obstacle detection and avoidance
     def __init__(self):
         self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         self.obstacle()
         
-    def get_scan(self):
-        scan = rospy.wait_for_message('scan', LaserScan)
+    def get_scan(self): #Function to handle all the data from the message from the LIDAR
+        scan = rospy.wait_for_message('scan', LaserScan) #Wait for "scan" message from the LaserScan
         scan_filter = []
-        front = []
+        front = [] #We seperate the data into three different directions, front, left and right
         left = []
         right = []
        
@@ -105,7 +105,7 @@ class Obstacle():
 
         return scan_filter
 
-    def obstacle(self):
+    def obstacle(self): #Primary function of our Obstacle class, which is used to navigate our robot
         twist = Twist()
         turtlebot_moving = True
         average_speed = []
