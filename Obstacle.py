@@ -108,12 +108,17 @@ class Obstacle():
     def obstacle(self):
         twist = Twist()
         turtlebot_moving = True
-
+        average_speed = []
         victim_count = 0
-        last_run_time = 0
-        delay = 3
+        colission_count = 0
+        last_run_time_rgb = 0
+        last_run_time_col = 0
+        delay_col = 2
+        delay_rgb = 3
 
-        while not rospy.is_shutdown():
+        runtime = time.time() + 120
+
+        while not rospy.is_shutdown() and time.time() < runtime:
             all_dist = self.get_scan()
             front_min_distance, i_f = min_org(all_dist[0],SAFE_STOP_DISTANCE+0.001)
             right_min_distance, _ = min_org(all_dist[1],SAFE_STOP_DISTANCE+0.001)
@@ -131,8 +136,15 @@ class Obstacle():
                     twist.linear.x = 0
                     self._cmd_pub.publish(twist)
                     rospy.loginfo('You spin me left round baby left round')
+                
+                average_speed.append(0)
+                if time.time() > last_run_time_col + delay_col:
+                    colission_count += 1
+                    rospy.loginfo('Colissions reggistered: %f', colission_count)
+                    last_run_time_col = time.time()
 
             elif 0.00 < front_min_distance < STOP_DISTANCE:
+
                 # Center is closest
                 if front_min_distance < left_min_distance and front_min_distance < right_min_distance and (0.00 < front_min_distance < STOP_DISTANCE):
                     if i_f % 2 == 0:
@@ -148,11 +160,13 @@ class Obstacle():
                         #turtlebot_moving = False
                         rospy.loginfo('Stop! Center distance of the obstacle, driving left : %f', front_min_distance)
                     rospy.loginfo('%f',i_f)
+
                 # Right side is closest
                 elif right_min_distance < left_min_distance and right_min_distance < front_min_distance and (0.00 < right_min_distance < STOP_DISTANCE):
                     twist.linear.x = LINEAR_VEL
                     twist.angular.z = 3 * (right_min_distance/front_min_distance) 
                     self._cmd_pub.publish(twist)
+                    average_speed.append((1-(right_min_distance/front_min_distance))*LINEAR_VEL)
                     #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving left. ' + 'Distance of the obstacle : %f', right_min_distance)
 
@@ -161,6 +175,7 @@ class Obstacle():
                     twist.linear.x = LINEAR_VEL
                     twist.angular.z = -3 * (left_min_distance/front_min_distance)
                     self._cmd_pub.publish(twist)
+                    average_speed.append((1-(right_min_distance/front_min_distance))*LINEAR_VEL)
                     #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving right. ' + 'Distance of the obstacle : %f', left_min_distance)
 
@@ -169,13 +184,19 @@ class Obstacle():
                 twist.angular.z = 0.0
                 self._cmd_pub.publish(twist)
                 turtlebot_moving = True
+
+                average_speed.append(LINEAR_VEL)
                 rospy.loginfo('We crusin with a distance of %f', front_min_distance)
             
-            if time.time() > last_run_time + delay:
+            if len(average_speed) != 0:
+                avspeed = sum(average_speed)/len(average_speed)
+                rospy.loginfo('Average speed: %f', avspeed)
+
+            if time.time() > last_run_time_rgb + delay_rgb:
                 if getAndUpdateColour() == 'Red':
                     victim_count += 1
                     rospy.loginfo('Victims found: %f', victim_count)
-                    last_run_time = time.time()
+                    last_run_time_rgb = time.time()
         rospy.loginfo('We found %f victims', victim_count)
 
 def min_org(l,a):
@@ -195,5 +216,5 @@ def main():
     except rospy.ROSInterruptException:
         pass
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     main()
