@@ -139,7 +139,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                 # This block also handles scenarios where the robot is too close to an obstacle.
             if (0.000 < right_min_distance < 0.130) or (0.000 < left_min_distance < 0.130) or (0.000 < front_min_distance < 0.130):
                 
-                # If there's an obstacle closer on the left, it'll turn right. If the obstacle is closer on the right, it'll turn left.
+                # If there's an obstacle closer on the left, it'll turn right until it can drive forward. If the obstacle is closer on the right, it'll turn left doing the same
                 if left_min_distance <= right_min_distance:
                     twist.angular.z = -1.5
                     twist.linear.x = 0
@@ -157,7 +157,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     rospy.loginfo('Colissions reggistered: %f', colission_count)
                     last_run_time_col = time.time()
             
-            # If there's an obstacle in front of the robot, but it's still a safe distance away.
+            # This block contains navigation if there's an obstacle in front of the robot, but it's still a safe distance away.
             elif 0.00 < front_min_distance < STOP_DISTANCE:
 
                 # Center is closest
@@ -193,7 +193,8 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     average_speed.append((1-(right_min_distance/front_min_distance))*LINEAR_VEL)
                     #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving right. ' + 'Distance of the obstacle : %f', left_min_distance)
-
+            
+            # If there's no immediate obstacle, the robot will move straight ahead.
             else:
                 twist.linear.x = LINEAR_VEL
                 twist.angular.z = 0.0
@@ -216,9 +217,13 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     last_run_time_rgb = time.time()
         rospy.loginfo('We found %f victims', victim_count)
 
+# Anti error function to counter random zeros which the LIDAR tended to do
+# It takes all zeros 
 def min_org(l,a):
-    min = a
+    # We initialize a minimum value and its index
+    min = a # a is our SAFE_STOP_DISTANCE+0,001
     min_i = 0
+
     for i in range(len(l)):
         if l[i] != 0.0000 and l[i] < min:
             min = l[i]
