@@ -78,7 +78,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         # The number of samples is defined in turtlebot3_<model>.gazebo.xacro file, the default is 360. 
         samples = len(scan.ranges)  
         # Defining the number of samples to consider for our view.
-        # This can be adjusted based on the robot's requirements in relation to its field of view .
+        # This can be adjusted if needed.
         samples_view = 3            
         
         # Ensure samples_view is not larger than the total number of samples
