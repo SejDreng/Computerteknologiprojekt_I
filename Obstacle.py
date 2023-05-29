@@ -127,16 +127,19 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         delay_rgb = 3
 
         runtime = time.time() + 120
-
+        
+        # The main loop will continue until either ROS shuts down or the runtime limit is reached.
         while not rospy.is_shutdown() and time.time() < runtime:
             all_dist = self.get_scan()
             front_min_distance, i_f = min_org(all_dist[0],SAFE_STOP_DISTANCE+0.001)
             right_min_distance, _ = min_org(all_dist[1],SAFE_STOP_DISTANCE+0.001)
             left_min_distance, _ = min_org(all_dist[2],SAFE_STOP_DISTANCE+0.001)
             
-                #Depending on the minimum distance to each different side, it sets the linear velocities of the robot
+                # Depending on the minimum distance to each different side, it sets the linear velocities of the robot
+                # This block also handles scenarios where the robot is too close to an obstacle.
             if (0.000 < right_min_distance < 0.130) or (0.000 < left_min_distance < 0.130) or (0.000 < front_min_distance < 0.130):
-
+                
+                # If there's an obstacle closer on the left, it'll turn right. If the obstacle is closer on the right, it'll turn left.
                 if left_min_distance <= right_min_distance:
                     twist.angular.z = -1.5
                     twist.linear.x = 0
@@ -153,7 +156,8 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     colission_count += 1
                     rospy.loginfo('Colissions reggistered: %f', colission_count)
                     last_run_time_col = time.time()
-
+            
+            # If there's an obstacle in front of the robot, but it's still a safe distance away.
             elif 0.00 < front_min_distance < STOP_DISTANCE:
 
                 # Center is closest
@@ -198,12 +202,12 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
 
                 average_speed.append(LINEAR_VEL)
                 rospy.loginfo('We crusin with a distance of %f', front_min_distance)
-            
+            # The robot keeps track of its average speed.
             if len(average_speed) != 0:
                 avspeed = sum(average_speed)/len(average_speed)
                 rospy.loginfo('Average speed: %f', avspeed)
 
-                #When
+            # Implmenting a delay of some seconds to avoid counting the same "victim" twice 
             if time.time() > last_run_time_rgb + delay_rgb:
                 #when it detects red, it increases a victim count, assuming we found a "victim"
                 if getAndUpdateColour() == 'Red': 
