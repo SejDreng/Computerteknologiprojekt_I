@@ -33,28 +33,29 @@ bus = smbus.SMBus(1)
 bus.write_byte_data(0x44, 0x01, 0x05)
 time.sleep(1)
 
-def getAndUpdateColour(): #This function reads data from the RGB sensor via the i2c protocol, and decides which color is dominant
-    #while True:
-        # Read the data from the sensor
-        # Convert the data to green, red and blue int values
-        # Insert code here
-        data = bus.read_i2c_block_data(0x44, 0x09, 6)
-        green = data[1] + data[0]/256
-        red = data[3] + data[2]/256
-        blue = data[5] + data[4]/256
+# This function reads data from the RGB sensor via the i2c protocol, and decides which color is dominant
+def getAndUpdateColour():
+    # Read the data from the sensor
+    # Convert the data to green, red and blue int values
+    data = bus.read_i2c_block_data(0x44, 0x09, 6)
+    green = data[1] + data[0]/256
+    red = data[3] + data[2]/256
+    blue = data[5] + data[4]/256
 
-        colour = ""
-        if green > red and green > blue:
-            colour = "Green"
-        elif blue > red:
-            colour = "Blue"
-        else:
-            colour = "Red"
-        # Output data to the console RGB values
-        # Uncomment the line below when you have read the red, green and blue values
-        print("RGB(%d %d %d)" % (red, green, blue))
-        print("The colour is " + colour)
-        return colour
+    # Determine the dominant color
+    colour = ""
+    if green > red and green > blue:
+        colour = "Green"
+    elif blue > red:
+        colour = "Blue"
+    else:
+        colour = "Red"
+
+    # Output RGB values and dominant color to the console
+    print("RGB(%d %d %d)" % (red, green, blue))
+    print("The colour is " + colour)
+
+    return colour
 
 LINEAR_VEL = 0.22
 STOP_DISTANCE = 0.40
@@ -68,28 +69,34 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         
     def get_scan(self): #Function to handle all the data from the message from the LIDAR
         scan = rospy.wait_for_message('scan', LaserScan) #Wait for "scan" message from the LaserScan
+        #We seperate the data into three different directions, front, left and right
         scan_filter = []
-        front = [] #We seperate the data into three different directions, front, left and right
+        front = [] 
         left = []
         right = []
-       
-        samples = len(scan.ranges)  # The number of samples is defined in 
-                                    # turtlebot3_<model>.gazebo.xacro file,
-                                    # the default is 360.
-        samples_view = 3            # 1 <= samples_view <= samples
+
+        # The number of samples is defined in turtlebot3_<model>.gazebo.xacro file, the default is 360. 
+        samples = len(scan.ranges)  
+        # Defining the number of samples to consider for our view.
+        # This can be adjusted based on the robot's requirements in relation to its field of view .
+        samples_view = 3            
         
+        # Ensure samples_view is not larger than the total number of samples
         if samples_view > samples:
             samples_view = samples
 
-        if samples_view is 3:
+        # If we're only looking at three samples, categorize them into front, left, and right
+        if samples_view is 3:            
             for i in range (15):
-                    front.append(scan.ranges[i])
-                    front.append(scan.ranges[359-i])   
-                    left.append(scan.ranges[315+i])
-                    left.append(scan.ranges[314-i])
-                    right.append(scan.ranges[45+i])
-                    right.append(scan.ranges[44-i])
-
+                    #Append these ranges to their respective cones
+                    front.append(scan.ranges[i])     #Front cone 1
+                    front.append(scan.ranges[359-i]) #Front cone 2
+                    left.append(scan.ranges[315+i])  #Left cone 1
+                    left.append(scan.ranges[314-i])  #Left cone 2
+                    right.append(scan.ranges[45+i])  #Right cone 1
+                    right.append(scan.ranges[44-i])  #Right cone 2
+            
+            #we add these three lists of 30 distances each to the scan_filter list.
             scan_filter.append(front)
             scan_filter.append(left)
             scan_filter.append(right)
@@ -195,7 +202,8 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
 
                 #When
             if time.time() > last_run_time_rgb + delay_rgb:
-                if getAndUpdateColour() == 'Red':        #when it detects red, it increases a victim count, assuming we found a "victim"
+                #when it detects red, it increases a victim count, assuming we found a "victim"
+                if getAndUpdateColour() == 'Red': 
                     victim_count += 1
                     rospy.loginfo('Victims found: %f', victim_count)
                     last_run_time_rgb = time.time()
