@@ -230,6 +230,7 @@ def min_org(l,a):
             min_i = i
     return min, min_i
 
+# Running it all, by creating an instance of the obstacle class and run it
 def main():
     rospy.init_node('turtlebot3_obstacle')
 
