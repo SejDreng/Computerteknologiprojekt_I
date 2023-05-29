@@ -102,14 +102,17 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
             scan_filter.append(right)
 
         else:
+            #
             left_lidar_samples_ranges = -(samples_view//2 + samples_view % 2)
             right_lidar_samples_ranges = samples_view//2
-           
+
+            # We then slice the scan.ranges list to obtain the respective left and right LIDAR samples.
             left_lidar_samples = scan.ranges[left_lidar_samples_ranges:]
             right_lidar_samples = scan.ranges[:right_lidar_samples_ranges]
+             # The obtained left and right LIDAR samples are then appended to the scan_filter list.
             scan_filter.extend(left_lidar_samples + right_lidar_samples)
         
-
+        #Lastly the complete list of LIDAR samples is returned 
         return scan_filter
 
     def obstacle(self): #Primary function of our Obstacle class, which is used to navigate our robot
