@@ -115,16 +115,16 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         #Lastly the complete list of LIDAR samples is returned 
         return scan_filter
 
-    def obstacle(self): #Primary function of our Obstacle class, which is used to navigate our robot
-        twist = Twist()
+    def obstacle(self):             # Primary function of our Obstacle class, which is used to navigate our robot
+        twist = Twist()             # We use the Twist message to control the robot's movement.
         turtlebot_moving = True
-        average_speed = []
-        victim_count = 0
-        colission_count = 0
-        last_run_time_rgb = 0
-        last_run_time_col = 0
-        delay_col = 2
-        delay_rgb = 3
+        average_speed = []          # This list contains the average speed of the robot at all times
+        victim_count = 0            # This counter keeps track of detected victims.  
+        colission_count = 0         # This counter keeps track of the robot's collisions.
+        last_run_time_rgb = 0       # This variable keeps track of the last time the robot checked for victims.
+        last_run_time_col = 0       # This variable keeps track of the last time the robot checked for collisions.
+        delay_col = 2               # This is the delay (in seconds) between collision checks.
+        delay_rgb = 3               # This is the delay (in seconds) between victim checks.
 
         runtime = time.time() + 120
         
