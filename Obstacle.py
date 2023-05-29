@@ -85,7 +85,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         if samples_view > samples:
             samples_view = samples
 
-        # If we're only looking at three samples, categorize them into front, left, and right
+        # Looking at the three samples, categorizing them into front, left, and right
         if samples_view is 3:            
             for i in range (15):
                     #Append these ranges to their respective cones
@@ -109,7 +109,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
             # We then slice the scan.ranges list to obtain the left and right LIDAR samples.
             left_lidar_samples = scan.ranges[left_lidar_samples_ranges:]
             right_lidar_samples = scan.ranges[:right_lidar_samples_ranges]
-             # The obtained left and right LIDAR samples are then appended to the scan_filter list.
+            # The obtained left and right LIDAR samples are then appended to the scan_filter list.
             scan_filter.extend(left_lidar_samples + right_lidar_samples)
         
         #Lastly the complete list of LIDAR samples is returned 
