@@ -106,7 +106,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
             left_lidar_samples_ranges = -(samples_view//2 + samples_view % 2)
             right_lidar_samples_ranges = samples_view//2
 
-            # We then slice the scan.ranges list to obtain the respective left and right LIDAR samples.
+            # We then slice the scan.ranges list to obtain the left and right LIDAR samples.
             left_lidar_samples = scan.ranges[left_lidar_samples_ranges:]
             right_lidar_samples = scan.ranges[:right_lidar_samples_ranges]
              # The obtained left and right LIDAR samples are then appended to the scan_filter list.
