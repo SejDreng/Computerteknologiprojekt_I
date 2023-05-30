@@ -217,7 +217,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     last_run_time_rgb = time.time()
         rospy.loginfo('We found %f victims', victim_count)
 
-# Anti error function to counter random zeros which the LIDAR tended to do
+# Anti error minimum function to counter random zeros which the LIDAR tended to do
 # It takes all zeros 
 def min_org(l,a):
     # We initialize a minimum value and its index
