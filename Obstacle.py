@@ -236,12 +236,16 @@ def min_org(l,a):
             min_i = i
     return min, min_i
 
-# Running it all, by creating an instance of the obstacle class and run it
+# Main
 def main():
+    # Initialize a ROS node named 'turtlebot3_obstacle'.
     rospy.init_node('turtlebot3_obstacle')
-
+    
+    # Create an instance of the Obstacle class.
     try:
         obstacle = Obstacle()
+
+    # If a ROS error occurs (such as Ctrl+C being pressed), the node will stop.
     except rospy.ROSInterruptException:
         pass
 
