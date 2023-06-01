@@ -135,7 +135,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
             right_min_distance, _ = min_org(all_dist[1],SAFE_STOP_DISTANCE+0.001)
             left_min_distance, _ = min_org(all_dist[2],SAFE_STOP_DISTANCE+0.001)
             
-                # Depending on the minimum distance to each different side, it sets the linear velocities of the robot
+                # Depending on the minimum distance to each different side, it sets the correct linear velocity of the robot
                 # This block also handles scenarios where the robot is too close to an obstacle.
             if (0.000 < right_min_distance < 0.130) or (0.000 < left_min_distance < 0.130) or (0.000 < front_min_distance < 0.130):
                 
