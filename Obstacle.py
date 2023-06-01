@@ -91,12 +91,12 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         if samples_view is 3:            
             for i in range (15):
                     #Append these ranges to their respective cones
-                    front.append(scan.ranges[359-i])
-                    front.append(scan.ranges[i])     
-                    left.append(scan.ranges[45+i]) 
-                    left.append(scan.ranges[44-i])
-                    right.append(scan.ranges[315+i])  #Left cone 1
-                    right.append(scan.ranges[314-i])
+                    front.append(scan.ranges[359-i]) # Front cone 1
+                    front.append(scan.ranges[i])     # Front cone 2
+                    left.append(scan.ranges[45+i])   # Left cone 1
+                    left.append(scan.ranges[44-i])   # Left cone 2
+                    right.append(scan.ranges[315+i]) # Right cone 1
+                    right.append(scan.ranges[314-i]) # Right cone 2   
             
             #we add these three lists of 30 distances each to the scan_filter list.
             scan_filter.append(front)
