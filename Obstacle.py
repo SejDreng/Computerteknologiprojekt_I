@@ -93,9 +93,9 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     #Append these ranges to their respective cones
                     front.append(scan.ranges[359-i])
                     front.append(scan.ranges[i])     
-                    left.append(scan.ranges[45+i]) 
+                    left.append(scan.ranges[45+i])
                     left.append(scan.ranges[44-i])
-                    right.append(scan.ranges[315+i])  #Left cone 1
+                    right.append(scan.ranges[315+i])
                     right.append(scan.ranges[314-i])
             
             #we add these three lists of 30 distances each to the scan_filter list.
