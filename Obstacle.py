@@ -135,8 +135,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
             right_min_distance, _ = min_org(all_dist[1],SAFE_STOP_DISTANCE+0.001)
             left_min_distance, _ = min_org(all_dist[2],SAFE_STOP_DISTANCE+0.001)
             
-                # Depending on the minimum distance to each different side, it sets the linear velocities of the robot
-                # This block also handles scenarios where the robot is too close to an obstacle.
+            # This block also handles scenarios where the robot is too close to an obstacle.
             if (0.000 < right_min_distance < 0.130) or (0.000 < left_min_distance < 0.130) or (0.000 < front_min_distance < 0.130):
                 
                 # If there's an obstacle closer on the left, it'll turn right until it can drive forward. If the obstacle is closer on the right, it'll turn left doing the same
@@ -157,7 +156,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     rospy.loginfo('Colissions reggistered: %f', colission_count)
                     last_run_time_col = time.time()
             
-            # This block contains navigation if there's an obstacle in front of the robot, but it's still a safe distance away.
+            # This block contains navigation for when there's an obstacle in front of the robot, and how to handle it compared to the specific situation.
             elif 0.00 < front_min_distance < STOP_DISTANCE:
 
                 # Center is closest
@@ -169,6 +168,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                         twist.linear.x = LINEAR_VEL     # Set linear velocity.
                         twist.angular.z = -2            # Set angular velocity to turn right.
                         self._cmd_pub.publish(twist)    # Publish the movement command to the robot.
+                        average_speed.append(0)
                         #turtlebot_moving = False
                         rospy.loginfo('Stop! Center distance of the obstacle, driving right : %f', front_min_distance)
                     # Else it should move left
@@ -176,10 +176,13 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                         twist.linear.x = LINEAR_VEL
                         twist.angular.z = 2
                         self._cmd_pub.publish(twist)
+                        average_speed.append(0)
                         #turtlebot_moving = False
                         rospy.loginfo('Stop! Center distance of the obstacle, driving left : %f', front_min_distance)
                     rospy.loginfo('%f',i_f)
 
+                # Depending on the minimum distance to each different side, it sets the angular velocities of the robot
+                
                 # Right side is closest:
                 # Check if an obstacle is closest in the right direction, within the stopping distance.
                 elif right_min_distance < left_min_distance and right_min_distance < front_min_distance and (0.00 < right_min_distance < STOP_DISTANCE):
@@ -209,6 +212,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
 
                 average_speed.append(LINEAR_VEL)
                 rospy.loginfo('We crusin with a distance of %f', front_min_distance)
+
             # The robot keeps track of its average speed.
             if len(average_speed) != 0:
                 avspeed = sum(average_speed)/len(average_speed)
