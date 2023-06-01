@@ -37,17 +37,19 @@ time.sleep(1)
 def getAndUpdateColour():
     # Read the data from the sensor
     # Convert the data to green, red and blue int values
-    data = bus.read_i2c_block_data(0x44, 0x09, 6)
-    green = data[1] + data[0]/256
-    red = data[3] + data[2]/256
-    blue = data[5] + data[4]/256
+    # The RGB sensor provides data in form of arrays of 8 bytes
+    # We read data from the 0x44 address and 0x09 register and 6 times forward
+    data = bus.read_i2c_block_data(0x44, 0x09, 6) 
+    green = data[1] + data[0]/256 # We read the incoming bytes of data and divide by 256 to bit-shift 8 times, and continue the same process with the other colours.
+    red = data[3] + data[2]/256 
+    blue = data[5] + data[4]/256 
 
     # Determine the dominant color
     colour = ""
     if green > red and green > blue:
         colour = "Green"
     elif blue > red:
-        colour = "Blue"
+        colour = "Blue" 
     else:
         colour = "Red"
 
