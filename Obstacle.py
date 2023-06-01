@@ -37,17 +37,19 @@ time.sleep(1)
 def getAndUpdateColour():
     # Read the data from the sensor
     # Convert the data to green, red and blue int values
-    data = bus.read_i2c_block_data(0x44, 0x09, 6)
-    green = data[1] + data[0]/256
-    red = data[3] + data[2]/256
-    blue = data[5] + data[4]/256
+    # The RGB sensor provides data in form of arrays of 8 bytes
+    # We read data from the 0x44 address and 0x09 register and 6 times forward
+    data = bus.read_i2c_block_data(0x44, 0x09, 6) 
+    green = data[1] + data[0]/256 # We read the incoming bytes of data and divide by 256 to bit-shift 8 times, and continue the same process with the other colours.
+    red = data[3] + data[2]/256 
+    blue = data[5] + data[4]/256 
 
     # Determine the dominant color
     colour = ""
     if green > red and green > blue:
         colour = "Green"
     elif blue > red:
-        colour = "Blue"
+        colour = "Blue" 
     else:
         colour = "Red"
 
@@ -89,17 +91,17 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
         if samples_view is 3:            
             for i in range (15):
                     #Append these ranges to their respective cones
-                    front.append(scan.ranges[i])     #Front cone 1
-                    front.append(scan.ranges[359-i]) #Front cone 2
-                    left.append(scan.ranges[315+i])  #Left cone 1
-                    left.append(scan.ranges[314-i])  #Left cone 2
-                    right.append(scan.ranges[45+i])  #Right cone 1
-                    right.append(scan.ranges[44-i])  #Right cone 2
+                    front.append(scan.ranges[359-i])
+                    front.append(scan.ranges[i])     
+                    left.append(scan.ranges[45+i]) 
+                    left.append(scan.ranges[44-i])
+                    right.append(scan.ranges[315+i])  #Left cone 1
+                    right.append(scan.ranges[314-i])
             
             #we add these three lists of 30 distances each to the scan_filter list.
             scan_filter.append(front)
-            scan_filter.append(left)
             scan_filter.append(right)
+            scan_filter.append(left)
 
         else:
             #
@@ -135,8 +137,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
             right_min_distance, _ = min_org(all_dist[1],SAFE_STOP_DISTANCE+0.001)
             left_min_distance, _ = min_org(all_dist[2],SAFE_STOP_DISTANCE+0.001)
             
-                # Depending on the minimum distance to each different side, it sets the correct linear velocity of the robot
-                # This block also handles scenarios where the robot is too close to an obstacle.
+            # This block also handles scenarios where the robot is too close to an obstacle.
             if (0.000 < right_min_distance < 0.130) or (0.000 < left_min_distance < 0.130) or (0.000 < front_min_distance < 0.130):
                 
                 # If there's an obstacle closer on the left, it'll turn right until it can drive forward. If the obstacle is closer on the right, it'll turn left doing the same
@@ -157,7 +158,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     rospy.loginfo('Colissions reggistered: %f', colission_count)
                     last_run_time_col = time.time()
             
-            # This block contains navigation if there's an obstacle in front of the robot, but it's still a safe distance away.
+            # This block contains navigation for when there's an obstacle in front of the robot, and how to handle it compared to the specific situation.
             elif 0.00 < front_min_distance < STOP_DISTANCE:
 
                 # Center is closest
@@ -169,17 +170,19 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                         twist.linear.x = LINEAR_VEL     # Set linear velocity.
                         twist.angular.z = -2            # Set angular velocity to turn right.
                         self._cmd_pub.publish(twist)    # Publish the movement command to the robot.
-                        #turtlebot_moving = False
+                        average_speed.append(0)
                         rospy.loginfo('Stop! Center distance of the obstacle, driving right : %f', front_min_distance)
                     # Else it should move left
                     else:
                         twist.linear.x = LINEAR_VEL
                         twist.angular.z = 2
                         self._cmd_pub.publish(twist)
-                        #turtlebot_moving = False
+                        average_speed.append(0)
                         rospy.loginfo('Stop! Center distance of the obstacle, driving left : %f', front_min_distance)
                     rospy.loginfo('%f',i_f)
 
+                # Depending on the minimum distance to each different side, it sets the angular velocities of the robot
+                
                 # Right side is closest:
                 # Check if an obstacle is closest in the right direction, within the stopping distance.
                 elif right_min_distance < left_min_distance and right_min_distance < front_min_distance and (0.00 < right_min_distance < STOP_DISTANCE):
@@ -187,7 +190,6 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     twist.angular.z = 3 * (right_min_distance/front_min_distance) 
                     self._cmd_pub.publish(twist)
                     average_speed.append((1-(right_min_distance/front_min_distance))*LINEAR_VEL)
-                    #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving left. ' + 'Distance of the obstacle : %f', right_min_distance)
 
                 # Left side is closest:
@@ -197,7 +199,6 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     twist.angular.z = -3 * (left_min_distance/front_min_distance)
                     self._cmd_pub.publish(twist)
                     average_speed.append((1-(right_min_distance/front_min_distance))*LINEAR_VEL)
-                    #turtlebot_moving = False
                     rospy.loginfo('Stop! Driving right. ' + 'Distance of the obstacle : %f', left_min_distance)
             
             # If there's no immediate obstacle, the robot will move straight ahead.
@@ -209,6 +210,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
 
                 average_speed.append(LINEAR_VEL)
                 rospy.loginfo('We crusin with a distance of %f', front_min_distance)
+
             # The robot keeps track of its average speed.
             if len(average_speed) != 0:
                 avspeed = sum(average_speed)/len(average_speed)
@@ -223,7 +225,7 @@ class Obstacle(): #We define the obstacle class, encapsulating all its behavior 
                     last_run_time_rgb = time.time()
         rospy.loginfo('We found %f victims', victim_count)
 
-# Anti error function to counter random zeros which the LIDAR tended to do
+# Anti error minimum function to counter random zeros which the LIDAR tended to do
 # It takes all zeros 
 def min_org(l,a):
     # We initialize a minimum value and its index
